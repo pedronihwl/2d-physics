@@ -15,6 +15,7 @@ int Graphics::Height() {
 }
 
 bool Graphics::OpenWindow() {
+
     if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
         std::cerr << "Error initializing SDL" << std::endl;
         return false;
@@ -22,9 +23,9 @@ bool Graphics::OpenWindow() {
 
     SDL_DisplayMode display_mode;
     SDL_GetCurrentDisplayMode(0, &display_mode);
-    windowWidth = display_mode.w;
-    windowHeight = display_mode.h;
-    window = SDL_CreateWindow(NULL, 0, 0, windowWidth, windowHeight, SDL_WINDOW_BORDERLESS);
+    windowWidth = display_mode.w / 1.2;
+    windowHeight = display_mode.h / 1.2;
+    window = SDL_CreateWindow(NULL, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, windowWidth, windowHeight, SDL_WINDOW_FOREIGN);
 
     if (!window) {
         std::cerr << "Error creating SDL window" << std::endl;
