@@ -8,9 +8,19 @@ struct Particle {
 	Vec2 acceleration;
 
 	float mass;
+	float invMass;
+
+	Vec2 resultantForces;
 
 	Particle(float x, float y, float mass);
 	~Particle();
+
+	void Integrate(float dt);
+
+	void AddForce(const Vec2& force);
+	
+	void ClearForces();
+
 };
 
 #endif

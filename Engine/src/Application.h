@@ -8,8 +8,8 @@ class Application {
     private:
         bool running = false;
         int previousFrameTime;
-        Particle* particle;
-
+        std::vector<Particle*> particles;
+        Vec2 pushForce = Vec2();
 
     public:
         Application() = default;

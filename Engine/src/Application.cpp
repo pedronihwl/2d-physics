@@ -9,7 +9,9 @@ bool Application::IsRunning() {
 ///////////////////////////////////////////////////////////////////////////////
 void Application::Setup() {
     running = Graphics::OpenWindow();
-    particle = new Particle(0, 0, 1.0);
+
+    particles.push_back(new Particle(50, 100, 1.0));
+    particles.push_back(new Particle(100, 100, 3.0));
 
     // TODO: setup objects in the scene
 }
@@ -27,6 +29,26 @@ void Application::Input() {
             case SDL_KEYDOWN:
                 if (event.key.keysym.sym == SDLK_ESCAPE)
                     running = false;
+
+                if (event.key.keysym.sym == SDLK_UP)
+                    pushForce.y = -50 * 50;
+                if (event.key.keysym.sym == SDLK_RIGHT) 
+                    pushForce.x = 50 * 50;
+                if (event.key.keysym.sym == SDLK_DOWN) 
+                    pushForce.y = 50 * 50;
+                if (event.key.keysym.sym == SDLK_LEFT)
+                    pushForce.x = -50 * 50;
+
+                break;
+            case SDL_KEYUP:
+                if (event.key.keysym.sym == SDLK_UP)
+                    pushForce.y = 0;
+                if (event.key.keysym.sym == SDLK_RIGHT)
+                    pushForce.x = 0;
+                if (event.key.keysym.sym == SDLK_DOWN)
+                    pushForce.y = 0;
+                if (event.key.keysym.sym == SDLK_LEFT)
+                    pushForce.x = 0;
                 break;
         }
     }
@@ -45,31 +67,53 @@ void Application::Update() {
     // Quantos pixels nós queremos mover por segundo e não por frame
     float deltaTime = (SDL_GetTicks() - previousFrameTime) / 1000.0;
 
+    if (deltaTime > 0.016) {
+        deltaTime = 0.016;
+    }
+
     previousFrameTime = SDL_GetTicks();
 
-    particle->acceleration.x = 2.0 * 50;
-    particle->acceleration.y = 9.8 * 50;
-
-    particle->velocity += particle->acceleration * deltaTime;
-    particle->position += particle->velocity * deltaTime;
-
-    if (particle->position.x - 4 <= 0) {
-        particle->position.x = 4;
-        particle->velocity.x *= -1.0;
-    }
-    else if (particle->position.x + 4 >= Graphics::Width()) {
-        particle->position.x = Graphics::Width() - 4;
-        particle->velocity.x *= -1.0;
+    // Adicionando vento para a particula
+    for (auto particle : particles) {
+        particle->AddForce(Vec2(2.0 * 50, 0.0 * 50));
     }
 
-    if (particle->position.y - 4 <= 0) {
-        particle->position.y = 4;
-        particle->velocity.y *= -1.0;
+    // Push force
+    for (auto particle : particles) {
+        particle->AddForce(pushForce);
     }
-    else if (particle->position.y + 4 >= Graphics::Height() ) {
-        particle->position.y = Graphics::Height() - 4;
-        particle->velocity.y *= -1.0;
+
+    // Adicionando peso para a particula
+    for (auto particle : particles) {
+        particle->AddForce(Vec2(0.0 * 50, particle->mass * 9.8 * 50));
     }
+
+    for (auto particle : particles) {
+        particle->Integrate(deltaTime);
+    }
+
+    for (auto particle : particles) {
+        if (particle->position.x - 4 <= 0) {
+            particle->position.x = 4;
+            particle->velocity.x *= -1.0;
+        }
+        else if (particle->position.x + 4 >= Graphics::Width()) {
+            particle->position.x = Graphics::Width() - 4;
+            particle->velocity.x *= -1.0;
+        }
+
+        if (particle->position.y - 4 <= 0) {
+            particle->position.y = 4;
+            particle->velocity.y *= -1.0;
+        }
+        else if (particle->position.y + 4 >= Graphics::Height()) {
+            particle->position.y = Graphics::Height() - 4;
+            particle->velocity.y *= -1.0;
+        }
+
+    }
+
+    
     
 }
 
@@ -78,7 +122,9 @@ void Application::Update() {
 ///////////////////////////////////////////////////////////////////////////////
 void Application::Render() {
     Graphics::ClearScreen(0xFF056263);
-    Graphics::DrawFillCircle(particle->position.x, particle->position.y, 5, 0xFFFFFFFF);
+    
+    Graphics::DrawFillCircle(particles[0]->position.x, particles[0]->position.y, particles[0]->mass * 4, 0xFFFFFFFF);
+    Graphics::DrawFillCircle(particles[1]->position.x, particles[1]->position.y, particles[1]->mass * 4, 0xFFFFFFFF);
     Graphics::RenderFrame();
 }
 
@@ -87,6 +133,8 @@ void Application::Render() {
 ///////////////////////////////////////////////////////////////////////////////
 void Application::Destroy() {
     // TODO: destroy all objects in the scene
-    delete particle;
+    for (auto particle : particles) {
+        delete particle;
+    }
     Graphics::CloseWindow();
 }
