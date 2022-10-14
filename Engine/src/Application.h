@@ -8,8 +8,12 @@ class Application {
     private:
         bool running = false;
         int previousFrameTime;
-        Particle* particle;
 
+        std::vector<Particle*> particles;
+        Vec2 pushForce = Vec2();
+
+        // liquid in your screen
+        SDL_Rect liquid;
 
     public:
         Application() = default;
