@@ -12,8 +12,8 @@ void Application::Setup() {
     running = Graphics::OpenWindow();
 
     // TODO: setup objects in the scene
-    //particles.push_back(new Particle(50, 100, 1.0));
-    //particles.push_back(new Particle(100, 100, 3.0));
+    particles.push_back(new Particle(200, 200, 1.0));
+    particles.push_back(new Particle(400, 300, 20.0));
 
     liquid.x = 0;
     liquid.w = Graphics::Width();
@@ -57,11 +57,34 @@ void Application::Input() {
                 break;
 
             case SDL_MOUSEBUTTONDOWN:
-                if (event.button.button == SDL_BUTTON_LEFT) {
+                if (event.button.button == SDL_BUTTON_RIGHT) {
                     int x, y;
                     SDL_GetMouseState(&x, &y);
 
                     particles.push_back(new Particle(x,y,2));
+                }
+
+                if (!leftMouseButtonDown && event.button.button == SDL_BUTTON_LEFT) {
+                    leftMouseButtonDown = true;
+                    int x, y;
+                    SDL_GetMouseState(&x, &y);
+                    mouse.x = x;
+                    mouse.y = y;
+                }
+                break;
+
+            case SDL_MOUSEMOTION:
+                mouse.x = event.motion.x;
+                mouse.y = event.motion.y;
+                break;
+
+
+            case SDL_MOUSEBUTTONUP:
+                if (leftMouseButtonDown && event.button.button == SDL_BUTTON_LEFT) {
+                    leftMouseButtonDown = false;
+                    Vec2 impulseDirection = (particles[0]->position - mouse).UnitVector();
+                    float impulseMagnitude = (particles[0]->position - mouse).Magnitude() * 5.0;
+                    particles[0]->velocity = impulseDirection * impulseMagnitude;
                 }
                 break;
         }
@@ -89,14 +112,13 @@ void Application::Update() {
 
     // Adicionando vento para a particula
     for (auto particle : particles) {
-        //particle->AddForce(Vec2(2.0 * 50, 0.0 * 50));
-        particle->AddForce(Vec2(0.0 * 50, particle->mass * 9.8 * 50));
         particle->AddForce(pushForce);
-
-        if (particle->position.y >= liquid.y) {
-            particle->AddForce(Force::GenerateDragForce(*particle,0.1));
-        }
+        particle->AddForce(Force::GenerateFrictionForce(*particle, 5));
     }
+
+    Vec2 attraction = Force::GenerateGravitionalForce(*particles[0], *particles[1], 500.0, 5.0, 100.0);
+    particles[0]->AddForce(attraction);
+    particles[1]->AddForce(-attraction);
 
     for (auto particle : particles) {
         particle->Integrate(deltaTime);
@@ -128,13 +150,19 @@ void Application::Update() {
 // Render function (called several times per second to draw objects)
 ///////////////////////////////////////////////////////////////////////////////
 void Application::Render() {
-    Graphics::ClearScreen(0xFF056263);
+    Graphics::ClearScreen(0xFF0F0721);
 
-    Graphics::DrawFillRect(liquid.x + liquid.w / 2, liquid.y + liquid.h / 2, liquid.w, liquid.h, 0xFF6E3713);
-    
-    for (auto particle : particles) {
-        Graphics::DrawFillCircle(particle->position.x, particle->position.y, particle->mass * 4, 0xFFFFFFFF);
+    //Graphics::DrawFillRect(liquid.x + liquid.w / 2, liquid.y + liquid.h / 2, liquid.w, liquid.h, 0xFF6E3713);
+    if (leftMouseButtonDown) {
+        Graphics::DrawLine(particles[0]->position.x, particles[0]->position.y, mouse.x, mouse.y, 0xFF0000FF);
     }
+
+    Graphics::DrawFillCircle(particles[0]->position.x, particles[0]->position.y, particles[0]->mass * 4, 0xFFAA3300);
+    Graphics::DrawFillCircle(particles[1]->position.x, particles[1]->position.y, particles[1]->mass * 1, 0xFF00FFFF);
+
+    //for (auto particle : particles) {
+        //Graphics::DrawFillCircle(particle->position.x, particle->position.y, particle->mass * 4, 0xFFFFFFFF);
+    //}
 
     Graphics::RenderFrame();
 }

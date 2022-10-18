@@ -8,10 +8,13 @@ class Application {
     private:
         bool running = false;
         int previousFrameTime;
+        bool leftMouseButtonDown = false;
 
-        std::vector<Particle*> particles;
         Vec2 pushForce = Vec2();
-
+        Vec2 mouse = Vec2();
+      
+        std::vector<Particle*> particles;
+        
         // liquid in your screen
         SDL_Rect liquid;
 
