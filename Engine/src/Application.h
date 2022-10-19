@@ -12,6 +12,10 @@ class Application {
 
         Vec2 pushForce = Vec2();
         Vec2 mouse = Vec2();
+
+        Vec2 anchor = Vec2();
+        float k = 300;
+        float restLength = 15;
       
         std::vector<Particle*> particles;
         
