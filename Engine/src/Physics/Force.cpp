@@ -46,4 +46,5 @@ Vec2 Force::GenerateSpringForce(const Particle& a, const Particle& b, float rest
 	float displacement = distance.Magnitude() - restLength;
 
 	return distance.UnitVector() * (-k * displacement);
+
 }
