@@ -3,23 +3,38 @@
 
 // TODO:
 
-Particle::Particle(float x, float y, float mass)
+Particle::Particle(const Shape& shape, float x, float y, float mass)
 {
-	this->position = Vec2(x, y);
-	this->mass = mass;
-
-	if (mass != 0.0) {
-		this->invMass = 1 / mass;
-	}
-	else {
-		this->invMass = 0.0;
-	}
-
-	std::cout << "Particle constructor!" << std::endl;
+    this->shape = shape.Clone();
+    this->position = Vec2(x, y);
+    this->velocity = Vec2(0, 0);
+    this->acceleration = Vec2(0, 0);
+    this->rotation = 0.0;
+    this->angularVelocity = 0.0;
+    this->angularAcceleration = 0.0;
+    this->resultantForces = Vec2(0, 0);
+    this->sumTorques = 0.0;
+    this->mass = mass;
+    if (mass != 0.0) {
+        this->invMass = 1.0 / mass;
+    }
+    else {
+        this->invMass = 0.0;
+    }
+    I = shape.MomentOfInertia() * mass;
+    if (I != 0.0) {
+        this->invI = 1.0 / I;
+    }
+    else {
+        this->invI = 0.0;
+    }
+    std::cout << "Body constructor called!" << std::endl;
 }
+
 
 Particle::~Particle()
 {
+	delete shape;
 	std::cout << "Particle destructor!" << std::endl;
 }
 
@@ -40,4 +55,22 @@ void Particle::AddForce(const Vec2& force) {
 
 void Particle::ClearForces() {
 	resultantForces = Vec2();
+}
+
+void Particle::ClearTorques() {
+	sumTorques = 0.0;
+}
+
+void Particle::AddTorque(const float torque) {
+	sumTorques += torque;
+}
+
+void Particle::AngularIntegration(float dt) {
+
+	angularAcceleration = sumTorques * invI;
+
+	angularVelocity += angularAcceleration * dt;
+	rotation += angularVelocity * dt;
+
+	ClearTorques();
 }

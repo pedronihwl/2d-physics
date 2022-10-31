@@ -148,6 +148,7 @@
     <ClCompile Include="src\Main.cpp" />
     <ClCompile Include="src\Physics\Force.cpp" />
     <ClCompile Include="src\Physics\Particle.cpp" />
+    <ClCompile Include="src\Physics\Shape.cpp" />
     <ClCompile Include="src\Physics\Vec2.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -248,6 +249,7 @@
     <ClInclude Include="src\Graphics.h" />
     <ClInclude Include="src\Physics\Force.h" />
     <ClInclude Include="src\Physics\Particle.h" />
+    <ClInclude Include="src\Physics\Shape.h" />
     <ClInclude Include="src\Physics\Vec2.h" />
   </ItemGroup>
   <ItemGroup>

@@ -11,12 +11,11 @@ bool Application::IsRunning() {
 void Application::Setup() {
     running = Graphics::OpenWindow();
 
-    anchor = Vec2(Graphics::Width() / 2, 30);
+    Particle* particle = new Particle(Circle(50), Graphics::Width() / 2.0, Graphics::Height() / 2.0, 1.0);
 
-    for (int i = 0; i < 5;i++) {
-        Particle* holded = new Particle(anchor.x, anchor.y + (i * restLength), 2.0);
-        particles.push_back(holded);
-    }
+    particles.push_back(particle);
+
+   
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -58,31 +57,6 @@ void Application::Input() {
                 if (event.button.button == SDL_BUTTON_RIGHT) {
                     int x, y;
                     SDL_GetMouseState(&x, &y);
-
-                    particles.push_back(new Particle(x,y,2));
-                }
-
-                if (!leftMouseButtonDown && event.button.button == SDL_BUTTON_LEFT) {
-                    leftMouseButtonDown = true;
-                    int x, y;
-                    SDL_GetMouseState(&x, &y);
-                    mouse.x = x;
-                    mouse.y = y;
-                }
-                break;
-
-            case SDL_MOUSEMOTION:
-                mouse.x = event.motion.x;
-                mouse.y = event.motion.y;
-                break;
-
-
-            case SDL_MOUSEBUTTONUP:
-                if (leftMouseButtonDown && event.button.button == SDL_BUTTON_LEFT) {
-                    leftMouseButtonDown = false;
-                    Vec2 impulseDirection = (particles[4]->position - mouse).UnitVector();
-                    float impulseMagnitude = (particles[4]->position - mouse).Magnitude() * 5.0;
-                    particles[4]->velocity = impulseDirection * impulseMagnitude;
                 }
                 break;
         }
@@ -108,47 +82,42 @@ void Application::Update() {
 
     previousFrameTime = SDL_GetTicks();
 
-    // Adicionando vento para a particula
     for (auto particle : particles) {
-        particle->AddForce(pushForce);
-
-        particle->AddForce(Force::GenerateDragForce(*particle, 0.005));
-
-        // Weight
-        particle->AddForce(Vec2(0.0, particle->mass * 9.8 * 50));
+        particle->AddForce(Vec2(0.0, 9.8 * particle->mass * 50));
+        particle->AddTorque(20);
     }
 
-    //Spring forces
-    particles[0]->AddForce(Force::GenerateSpringForce(*particles[0], anchor, restLength, k));
-
-    for (int i = 1;i < 5;i++) {
-        Vec2 springForce = Force::GenerateSpringForce(*particles[i], *particles[i - 1], restLength, k);
-
-        particles[i]->AddForce(springForce);
-        particles[i - 1]->AddForce(-springForce);
-    }
 
     for (auto particle : particles) {
         particle->Integrate(deltaTime);
+        particle->AngularIntegration(deltaTime);
     }
 
-    for (auto particle : particles) {
-        if (particle->position.x - 4 <= 0) {
-            particle->position.x = 4;
-            particle->velocity.x *= -1.0;
-        }
-        else if (particle->position.x + 4 >= Graphics::Width()) {
-            particle->position.x = Graphics::Width() - 4;
-            particle->velocity.x *= -1.0;
-        }
 
-        if (particle->position.y - 4 <= 0) {
-            particle->position.y = 4;
-            particle->velocity.y *= -1.0;
-        }
-        else if (particle->position.y + 4 >= Graphics::Height()) {
-            particle->position.y = Graphics::Height() - 4;
-            particle->velocity.y *= -1.0;
+    // Bordas
+    for (auto particle : particles) {
+
+        if (particle->shape->GetType() == CIRCLE) {
+            Circle* circle = (Circle*)particle->shape;
+
+            if (particle->position.x - circle->radius <= 0) {
+                particle->position.x = circle->radius;
+                particle->velocity.x *= -1.0;
+            }
+            else if (particle->position.x + circle->radius >= Graphics::Width()) {
+                particle->position.x = Graphics::Width() - circle->radius;
+                particle->velocity.x *= -1.0;
+            }
+
+            if (particle->position.y - circle->radius <= 0) {
+                particle->position.y = circle->radius;
+                particle->velocity.y *= -1.0;
+            }
+            else if (particle->position.y + circle->radius >= Graphics::Height()) {
+                particle->position.y = Graphics::Height() - circle->radius;
+                particle->velocity.y *= -1.0;
+            }
+
         }
 
     }    
@@ -160,21 +129,12 @@ void Application::Update() {
 void Application::Render() {
     Graphics::ClearScreen(0xFF0F0721);
 
-    if (leftMouseButtonDown) {
-        Graphics::DrawLine(particles[4]->position.x, particles[4]->position.y, mouse.x, mouse.y, 0xFF0000FF);
-    }
+    for (auto particle : particles) {
 
-    Graphics::DrawFillCircle(anchor.x, anchor.y, 4, 0xFF001155);
-
-    //Graphics::DrawLine(anchor.x, anchor.y, particles[0]->position.x, particles[0]->position.y, 0xFF313131);
-    //Graphics::DrawFillCircle(particles[0]->position.x, particles[0]->position.y, particles[0]->mass * 4, 0xFFAA3300);
-
-    Graphics::DrawLine(anchor.x, anchor.y, particles[0]->position.x, particles[0]->position.y, 0xFF313131);
-    Graphics::DrawFillCircle(particles[0]->position.x, particles[0]->position.y, particles[0]->mass * 4, 0xFFAA3300);
-
-    for (int i = 1; i < 5;i++) {
-        Graphics::DrawLine(particles[i - 1]->position.x, particles[i - 1]->position.y, particles[i]->position.x, particles[i]->position.y, 0xFF313131);
-        Graphics::DrawFillCircle(particles[i]->position.x, particles[i]->position.y, particles[i]->mass * 4, 0xFFAA3300);
+        if (particle->shape->GetType() == CIRCLE) {
+            Circle* circle = (Circle*)particle->shape;
+            Graphics::DrawCircle(particle->position.x, particle->position.y, circle->radius, particle->rotation, 0xFFFFFFFF);
+        }
     }
 
     Graphics::RenderFrame();
