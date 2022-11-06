@@ -74,3 +74,16 @@ void Particle::AngularIntegration(float dt) {
 
 	ClearTorques();
 }
+
+void Particle::UpdateBody(float deltaTime) {
+    this->Integrate(deltaTime);
+    this->AngularIntegration(deltaTime);
+
+    bool isPolygon = this->shape->GetType() == POLYGON || this->shape->GetType() == BOX;
+
+    if (isPolygon) {
+        // Atualizar vertices
+        Polygon* polygon = (Polygon*)this->shape;
+        polygon->UpdateVertices(this->rotation, this->position);
+    }
+}

@@ -38,6 +38,8 @@ struct Particle {
 
 	void ClearTorques();
 
+	void UpdateBody(float deltaTime);
+
 };
 
 #endif

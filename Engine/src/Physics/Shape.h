@@ -1,5 +1,6 @@
 #include <vector>
 #include "Vec2.h"
+
 #ifndef SHAPE_H
 #define SHAPE_H
 
@@ -31,7 +32,8 @@ struct Circle : public Shape {
 };
 
 struct Polygon : public Shape {
-	std::vector<Vec2> vertices;
+	std::vector<Vec2> localSpace;
+	std::vector<Vec2> worldSpace;
 
 	Polygon() = default;
 	Polygon(const std::vector<Vec2> vertices);
@@ -43,6 +45,8 @@ struct Polygon : public Shape {
 	Shape* Clone() const override;
 
 	float MomentOfInertia() const override;
+
+	void UpdateVertices(float rotation, const Vec2& position);
 
 };
 

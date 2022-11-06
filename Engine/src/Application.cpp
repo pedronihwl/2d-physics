@@ -11,8 +11,9 @@ bool Application::IsRunning() {
 void Application::Setup() {
     running = Graphics::OpenWindow();
 
-    Particle* particle = new Particle(Circle(50), Graphics::Width() / 2.0, Graphics::Height() / 2.0, 1.0);
+    //Particle* particle = new Particle(Circle(50), Graphics::Width() / 2.0, Graphics::Height() / 2.0, 1.0);
 
+    Particle* particle = new Particle(Box(300.0,200.0), Graphics::Width() / 2.0, Graphics::Height() / 2.0, 3.0);
     particles.push_back(particle);
 
    
@@ -83,16 +84,16 @@ void Application::Update() {
     previousFrameTime = SDL_GetTicks();
 
     for (auto particle : particles) {
-        particle->AddForce(Vec2(0.0, 9.8 * particle->mass * 50));
-        particle->AddTorque(20);
+        //particle->AddForce(Vec2(0.0, 9.8 * particle->mass * 50));
+        //particle->AddTorque(6000);
+
+        particle->rotation += 0.03;
     }
 
 
     for (auto particle : particles) {
-        particle->Integrate(deltaTime);
-        particle->AngularIntegration(deltaTime);
+        particle->UpdateBody(deltaTime);
     }
-
 
     // Bordas
     for (auto particle : particles) {
@@ -134,6 +135,11 @@ void Application::Render() {
         if (particle->shape->GetType() == CIRCLE) {
             Circle* circle = (Circle*)particle->shape;
             Graphics::DrawCircle(particle->position.x, particle->position.y, circle->radius, particle->rotation, 0xFFFFFFFF);
+        }
+
+        if (particle->shape->GetType() == BOX) {
+            Box* box = (Box*)particle->shape;
+            Graphics::DrawPolygon(particle->position.x, particle->position.y, box->worldSpace, 0xFFFFFFFF);
         }
     }
 

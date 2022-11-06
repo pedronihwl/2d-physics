@@ -25,7 +25,7 @@ float Circle::MomentOfInertia() const {
 ////
 
 Polygon::Polygon(std::vector<Vec2> vertices) {
-	this->vertices = vertices;
+	this->localSpace = vertices;
 	std::cout << "Polygon constructor" << std::endl;
 }
 
@@ -34,7 +34,7 @@ Polygon::~Polygon() {
 }
 
 Shape* Polygon::Clone() const {
-	return new Polygon(this->vertices);
+	return new Polygon(this->localSpace);
 }
 
 ShapeType Polygon::GetType() const {
@@ -45,11 +45,33 @@ float Polygon::MomentOfInertia() const {
 	return 0.0;
 }
 
+void Polygon::UpdateVertices(float angle, const Vec2& position) {
+
+	for (auto i=0; i < localSpace.size(); i++)
+	{
+		// Rotação
+		worldSpace[i] = localSpace[i].Rotate(angle);
+		// Translação
+		worldSpace[i] += position;
+	}
+}
+
 ///
 
 Box::Box(float width, float height) {
 	this->width = width;
 	this->height = height;
+	
+	localSpace.push_back(Vec2(-width / 2.0, -height / 2.0));
+	localSpace.push_back(Vec2(+width / 2.0, -height / 2.0));
+	localSpace.push_back(Vec2(+width / 2.0, +height / 2.0));
+	localSpace.push_back(Vec2(-width / 2.0, +height / 2.0));
+
+	worldSpace.push_back(Vec2(-width / 2.0, -height / 2.0));
+	worldSpace.push_back(Vec2(+width / 2.0, -height / 2.0));
+	worldSpace.push_back(Vec2(+width / 2.0, +height / 2.0));
+	worldSpace.push_back(Vec2(-width / 2.0, +height / 2.0));
+
 	std::cout << "Box constructor" << std::endl;
 }
 
