@@ -1,5 +1,6 @@
 #include "Application.h"
 #include "Physics/Force.h"
+#include "Physics/CollisionDetector.h"
 
 bool Application::IsRunning() {
     return running;
@@ -11,12 +12,19 @@ bool Application::IsRunning() {
 void Application::Setup() {
     running = Graphics::OpenWindow();
 
-    //Particle* particle = new Particle(Circle(50), Graphics::Width() / 2.0, Graphics::Height() / 2.0, 1.0);
 
-    Particle* particle = new Particle(Box(300.0,200.0), Graphics::Width() / 2.0, Graphics::Height() / 2.0, 3.0);
-    particles.push_back(particle);
+    particles.push_back(new Particle(Circle(25.0), Graphics::Width() - 100, Graphics::Height() / 2, 5.0, 0xFFFFFFFF));
 
-   
+    particles.push_back(new Particle(Circle(25.0), Graphics::Width() / 5, Graphics::Height() / 2 + 125, 5.0, 0xFFAA3300));
+    particles.push_back(new Particle(Circle(25.0), Graphics::Width() / 5, Graphics::Height() / 2 + 150, 5.0, 0xFFAA3300));
+    particles.push_back(new Particle(Circle(25.0), Graphics::Width() / 5, Graphics::Height() / 2 + 175, 5.0, 0xFFAA3300));
+    particles.push_back(new Particle(Circle(25.0), Graphics::Width() / 5, Graphics::Height() / 2 + 200, 5.0, 0xFFAA3300));
+
+    particles.push_back(new Particle(Circle(25.0), Graphics::Width() / 4, Graphics::Height() / 2 + 125, 5.0, 0xFFAA3300));
+    particles.push_back(new Particle(Circle(25.0), Graphics::Width() / 4, Graphics::Height() / 2 + 150, 5.0, 0xFFAA3300));
+    particles.push_back(new Particle(Circle(25.0), Graphics::Width() / 4, Graphics::Height() / 2 + 175, 5.0, 0xFFAA3300));
+    particles.push_back(new Particle(Circle(25.0), Graphics::Width() / 4, Graphics::Height() / 2 + 200, 5.0, 0xFFAA3300));
+
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -29,35 +37,26 @@ void Application::Input() {
             case SDL_QUIT:
                 running = false;
                 break;
-            case SDL_KEYDOWN:
-                if (event.key.keysym.sym == SDLK_ESCAPE)
-                    running = false;
-
-                if (event.key.keysym.sym == SDLK_UP)
-                    pushForce.y = -50 * 50;
-                if (event.key.keysym.sym == SDLK_RIGHT) 
-                    pushForce.x = 50 * 50;
-                if (event.key.keysym.sym == SDLK_DOWN) 
-                    pushForce.y = 50 * 50;
-                if (event.key.keysym.sym == SDLK_LEFT)
-                    pushForce.x = -50 * 50;
-
-                break;
-            case SDL_KEYUP:
-                if (event.key.keysym.sym == SDLK_UP)
-                    pushForce.y = 0;
-                if (event.key.keysym.sym == SDLK_RIGHT)
-                    pushForce.x = 0;
-                if (event.key.keysym.sym == SDLK_DOWN)
-                    pushForce.y = 0;
-                if (event.key.keysym.sym == SDLK_LEFT)
-                    pushForce.x = 0;
-                break;
-
             case SDL_MOUSEBUTTONDOWN:
-                if (event.button.button == SDL_BUTTON_RIGHT) {
+                if (!leftMouseButtonDown && event.button.button == SDL_BUTTON_LEFT) {
+                    leftMouseButtonDown = true;
                     int x, y;
                     SDL_GetMouseState(&x, &y);
+                    mouse.x = x;
+                    mouse.y = y;
+                }
+                break;
+            case SDL_MOUSEMOTION:
+                mouse.x = event.motion.x;
+                mouse.y = event.motion.y;
+                break;
+
+            case SDL_MOUSEBUTTONUP:
+                if (leftMouseButtonDown && event.button.button == SDL_BUTTON_LEFT) {
+                    leftMouseButtonDown = false;
+                    Vec2 impulseDirection = (particles[0]->position - mouse).UnitVector();
+                    float impulseMagnitude = (particles[0]->position - mouse).Magnitude() * 5.0;
+                    particles[0]->velocity = impulseDirection * impulseMagnitude;
                 }
                 break;
         }
@@ -68,7 +67,8 @@ void Application::Input() {
 // Update function (called several times per second to update objects)
 ///////////////////////////////////////////////////////////////////////////////
 void Application::Update() {
-    // Limitar aplicação a 60 frames por segundo
+    Graphics::ClearScreen(0xFF0F0721);
+
     int timeTowait = (1000 / 60) - (SDL_GetTicks() - previousFrameTime);
     if (timeTowait > 0) {
         SDL_Delay(timeTowait);
@@ -84,15 +84,31 @@ void Application::Update() {
     previousFrameTime = SDL_GetTicks();
 
     for (auto particle : particles) {
-        //particle->AddForce(Vec2(0.0, 9.8 * particle->mass * 50));
-        //particle->AddTorque(6000);
 
-        particle->rotation += 0.03;
+        particle->AddForce(Force::GenerateFrictionForce(*particle, 250));
     }
-
 
     for (auto particle : particles) {
         particle->UpdateBody(deltaTime);
+    }
+
+    // Collision detection
+    for (int i = 0; i <= particles.size() - 1; i++) {
+        for (int j = i + 1; j < particles.size(); j++) {
+            Contract contract;
+           
+            bool hasCollision = CollisionDetector::IsColliding(particles[i], particles[j], contract);
+
+            particles[i]->hasCollision = hasCollision;
+            particles[j]->hasCollision = hasCollision;
+
+            if (hasCollision) {
+                contract.ResolveCollision();
+                //Graphics::DrawFillCircle(contract.start.x, contract.start.y, 3, 0xFFFF00FF);
+                //Graphics::DrawFillCircle(contract.end.x, contract.end.y, 3, 0xFFFF00FF);
+                //Graphics::DrawLine(contract.start.x, contract.start.y, contract.start.x + contract.normal.x * 15, contract.start.y + contract.normal.y * 15, 0xFFFF00FF);
+            }
+        }
     }
 
     // Bordas
@@ -128,19 +144,22 @@ void Application::Update() {
 // Render function (called several times per second to draw objects)
 ///////////////////////////////////////////////////////////////////////////////
 void Application::Render() {
-    Graphics::ClearScreen(0xFF0F0721);
 
     for (auto particle : particles) {
 
         if (particle->shape->GetType() == CIRCLE) {
             Circle* circle = (Circle*)particle->shape;
-            Graphics::DrawCircle(particle->position.x, particle->position.y, circle->radius, particle->rotation, 0xFFFFFFFF);
+            Graphics::DrawFillCircle(particle->position.x, particle->position.y, circle->radius, particle->color);
         }
 
         if (particle->shape->GetType() == BOX) {
             Box* box = (Box*)particle->shape;
-            Graphics::DrawPolygon(particle->position.x, particle->position.y, box->worldSpace, 0xFFFFFFFF);
+            Graphics::DrawPolygon(particle->position.x, particle->position.y, box->worldSpace, particle->color);
         }
+    }
+
+    if (leftMouseButtonDown) {
+        Graphics::DrawLine(particles[0]->position.x, particles[0]->position.y, mouse.x, mouse.y, 0xFF0000FF);
     }
 
     Graphics::RenderFrame();

@@ -1,9 +1,10 @@
 #include "Particle.h"
 #include "iostream"
+#include <math.h>
 
 // TODO:
 
-Particle::Particle(const Shape& shape, float x, float y, float mass)
+Particle::Particle(const Shape& shape, float x, float y, float mass, Uint32 color)
 {
     this->shape = shape.Clone();
     this->position = Vec2(x, y);
@@ -13,8 +14,10 @@ Particle::Particle(const Shape& shape, float x, float y, float mass)
     this->angularVelocity = 0.0;
     this->angularAcceleration = 0.0;
     this->resultantForces = Vec2(0, 0);
+    this->restitution = 1.0;
     this->sumTorques = 0.0;
     this->mass = mass;
+    this->color = color;
     if (mass != 0.0) {
         this->invMass = 1.0 / mass;
     }
@@ -40,7 +43,7 @@ Particle::~Particle()
 
 
 void Particle::Integrate(float dt) {
-
+    if (IsStatic()) return;
 	acceleration = resultantForces * invMass;
 
 	velocity += acceleration * dt;
@@ -66,6 +69,7 @@ void Particle::AddTorque(const float torque) {
 }
 
 void Particle::AngularIntegration(float dt) {
+    if (IsStatic()) return;
 
 	angularAcceleration = sumTorques * invI;
 
@@ -86,4 +90,15 @@ void Particle::UpdateBody(float deltaTime) {
         Polygon* polygon = (Polygon*)this->shape;
         polygon->UpdateVertices(this->rotation, this->position);
     }
+}
+
+bool Particle::IsStatic() const {
+    const float epsilon = 0.005f;
+    return fabs(invMass - 0.0) < epsilon;
+}
+
+void Particle::AddImpulse(const Vec2& J) {
+    if (this->IsStatic()) return;
+
+    this->velocity += J * this->invMass;
 }
