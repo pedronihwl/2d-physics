@@ -1,5 +1,6 @@
 #include "Shape.h"
 #include <iostream>
+#include <limits>
 
 Circle::Circle(float radius) {
 	this->radius = radius;
@@ -31,6 +32,44 @@ Polygon::Polygon(std::vector<Vec2> vertices) {
 
 Polygon::~Polygon() {
 	std::cout << "Polygon destructor" << std::endl;
+}
+
+Vec2 Polygon::EdgeAt(int index) const {
+	int nextVertice = (index + 1) % worldSpace.size();
+
+	return worldSpace[nextVertice] - worldSpace[index];
+}
+
+float Polygon::FindMinSeparation(const Polygon* other, Vec2& axis, Vec2& point) const {
+	float separation = std::numeric_limits<float>::lowest();
+
+
+	for (int i = 0;i < this->worldSpace.size(); i++) {
+
+		Vec2 va = this->worldSpace[i];
+		Vec2 normal = this->EdgeAt(i).Normal();
+
+		float minSep = std::numeric_limits<float>::max();
+
+		Vec2 minPoint;
+		for (int j = 0;j < other->worldSpace.size(); j++) {
+			Vec2 vb = other->worldSpace[j];
+			float projection = (vb - va).Dot(normal);
+
+			if (projection < minSep) {
+				minPoint = vb;
+				minSep = projection;
+			}
+		}
+
+		if (minSep > separation) {
+			separation = minSep;
+			axis = this->EdgeAt(i);
+			point = minPoint;
+		}
+	}
+
+	return separation;
 }
 
 Shape* Polygon::Clone() const {

@@ -44,6 +44,10 @@ struct Polygon : public Shape {
 
 	Shape* Clone() const override;
 
+	Vec2 EdgeAt(int index) const;
+
+	float FindMinSeparation(const Polygon* other, Vec2& axis, Vec2& point) const;
+
 	float MomentOfInertia() const override;
 
 	void UpdateVertices(float rotation, const Vec2& position);

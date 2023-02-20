@@ -12,18 +12,14 @@ bool Application::IsRunning() {
 void Application::Setup() {
     running = Graphics::OpenWindow();
 
+    Particle* a = new Particle(Box(200,200), Graphics::Width() / 2, Graphics::Height() / 2, 1.0, 0xFFFF00FF);
+    Particle* b = new Particle(Box(200, 200), Graphics::Width() / 2, Graphics::Height() / 2, 1.0, 0xFFFF00FF);
 
-    particles.push_back(new Particle(Circle(25.0), Graphics::Width() - 100, Graphics::Height() / 2, 5.0, 0xFFFFFFFF));
+    a->angularVelocity = 0.9;
+    b->angularVelocity = 0.9;
 
-    particles.push_back(new Particle(Circle(25.0), Graphics::Width() / 5, Graphics::Height() / 2 + 125, 5.0, 0xFFAA3300));
-    particles.push_back(new Particle(Circle(25.0), Graphics::Width() / 5, Graphics::Height() / 2 + 150, 5.0, 0xFFAA3300));
-    particles.push_back(new Particle(Circle(25.0), Graphics::Width() / 5, Graphics::Height() / 2 + 175, 5.0, 0xFFAA3300));
-    particles.push_back(new Particle(Circle(25.0), Graphics::Width() / 5, Graphics::Height() / 2 + 200, 5.0, 0xFFAA3300));
-
-    particles.push_back(new Particle(Circle(25.0), Graphics::Width() / 4, Graphics::Height() / 2 + 125, 5.0, 0xFFAA3300));
-    particles.push_back(new Particle(Circle(25.0), Graphics::Width() / 4, Graphics::Height() / 2 + 150, 5.0, 0xFFAA3300));
-    particles.push_back(new Particle(Circle(25.0), Graphics::Width() / 4, Graphics::Height() / 2 + 175, 5.0, 0xFFAA3300));
-    particles.push_back(new Particle(Circle(25.0), Graphics::Width() / 4, Graphics::Height() / 2 + 200, 5.0, 0xFFAA3300));
+    particles.push_back(a);
+    particles.push_back(b);
 
 }
 
@@ -49,15 +45,9 @@ void Application::Input() {
             case SDL_MOUSEMOTION:
                 mouse.x = event.motion.x;
                 mouse.y = event.motion.y;
-                break;
 
-            case SDL_MOUSEBUTTONUP:
-                if (leftMouseButtonDown && event.button.button == SDL_BUTTON_LEFT) {
-                    leftMouseButtonDown = false;
-                    Vec2 impulseDirection = (particles[0]->position - mouse).UnitVector();
-                    float impulseMagnitude = (particles[0]->position - mouse).Magnitude() * 5.0;
-                    particles[0]->velocity = impulseDirection * impulseMagnitude;
-                }
+                particles[1]->position.x = mouse.x;
+                particles[1]->position.y = mouse.y;
                 break;
         }
     }
@@ -103,10 +93,7 @@ void Application::Update() {
             particles[j]->hasCollision = hasCollision;
 
             if (hasCollision) {
-                contract.ResolveCollision();
-                //Graphics::DrawFillCircle(contract.start.x, contract.start.y, 3, 0xFFFF00FF);
-                //Graphics::DrawFillCircle(contract.end.x, contract.end.y, 3, 0xFFFF00FF);
-                //Graphics::DrawLine(contract.start.x, contract.start.y, contract.start.x + contract.normal.x * 15, contract.start.y + contract.normal.y * 15, 0xFFFF00FF);
+                //contract.ResolveCollision();
             }
         }
     }
@@ -147,6 +134,8 @@ void Application::Render() {
 
     for (auto particle : particles) {
 
+        particle->color = particle->hasCollision ? 0xFF0000FF : 0xFFFFFFFF ;
+
         if (particle->shape->GetType() == CIRCLE) {
             Circle* circle = (Circle*)particle->shape;
             Graphics::DrawFillCircle(particle->position.x, particle->position.y, circle->radius, particle->color);
@@ -156,10 +145,6 @@ void Application::Render() {
             Box* box = (Box*)particle->shape;
             Graphics::DrawPolygon(particle->position.x, particle->position.y, box->worldSpace, particle->color);
         }
-    }
-
-    if (leftMouseButtonDown) {
-        Graphics::DrawLine(particles[0]->position.x, particles[0]->position.y, mouse.x, mouse.y, 0xFF0000FF);
     }
 
     Graphics::RenderFrame();
